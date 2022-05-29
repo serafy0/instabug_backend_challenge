@@ -5,3 +5,10 @@
 #
 #   movies = Movie.create([{ name: "Star Wars" }, { name: "Lord of the Rings" }])
 #   Character.create(name: "Luke", movie: movies.first)
+
+apps = []
+(1..20).each do |i|
+  apps.push({ name: "app#{i}" })
+end
+
+App.create(apps)

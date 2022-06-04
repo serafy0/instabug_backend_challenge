@@ -11,27 +11,27 @@ services:
     volumes:
       - ./tmp/db:/var/lib/mysql
 
-  # db:
-  #   image: mysql:5.6.34
-  #   restart: always
-  #   environment:
-  #     MYSQL_DATABASE: 'db'
-  #     # So you don't have to use root, but you can if you like
-  #     MYSQL_USER: 'user'
-  #     # You can use whatever password you like
-  #     MYSQL_PASSWORD: 'password'
-  #     # Password for root access
-  #     MYSQL_ROOT_PASSWORD: 'password'
-  #   ports:
-  #     # <Port exposed> : < MySQL Port running inside container>
-  #     - '3306:3306'
-  #   expose:
-  #     # Opens port 3306 on the container
-  #     - '3306'
-  #     # Where our data will be persisted
-  #   volumes:
-  #     - my-db:/var/lib/mysql
-# Names our volume
+  elasticsearch:
+    image: opensearchproject/opensearch:2.0.0
+    environment:
+      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+      - "DISABLE_INSTALL_DEMO_CONFIG=true" # disables execution of install_demo_configuration.sh bundled with security plugin, which installs demo certificates and security configurations to OpenSearch
+      - "DISABLE_SECURITY_PLUGIN=true" # disables security plugin entirely in OpenSearch by setting plugins.security.disabled: true in opensearch.yml
+      - "discovery.type=single-node" # disables bootstrap checks that are enabled when network.host is set to a non-loopback address
+       
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+        hard: 65536
+    volumes:
+      - opensearch-data1:/usr/share/opensearch/data
+    ports:
+      - 9200:9200
+      - 9600:9600 # required for Performance Analyzer
   web:
     build: .
     command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
@@ -53,22 +53,23 @@ services:
       - ".:/workspace"
   
 
-  elasticsearch:
-    image: elasticsearch:8.2.0
+  # elasticsearch:
+  #   image: elasticsearch:8.2.0
 
-    ports:
-      - "9200:9200"
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536
-        hard: 65536
-    mem_limit: 1g
-    cap_add:
-      - IPC_LOCK
-    volumes:
-      - /usr/share/elasticsearch/data
+  #   ports:
+  #     - "9200:9200"
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65536
+  #       hard: 65536
+  #   mem_limit: 1g
+  #   cap_add:
+  #     - IPC_LOCK
+  #   volumes:
+  #     - /usr/share/elasticsearch/data
 volumes:
   my-db:
+  opensearch-data1:

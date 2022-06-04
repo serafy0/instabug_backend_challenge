@@ -9,7 +9,7 @@ class CreateMessageJob < ApplicationJob
       message_count = last_message_inserted.number unless last_message_inserted.nil?
       message = Message.new({ app_token: token, chat_number: chat_number, number: message_count + 1,
                               text: text })
-      message.save
+      UpdateMessageCountJob.set(wait: 1.minutes).perform_later(message_count + 1, token) if message.save!
     end
   end
 end

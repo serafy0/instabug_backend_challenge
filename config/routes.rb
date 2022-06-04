@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  resources :apps do
+  resources :apps, path: :applications do
     resources :chats do
       resources :messages do
         post 'search', on: :collection

@@ -7,14 +7,14 @@ class MessagesController < ApplicationController
   def index
     @messages = Message.where(app_token: params[:app_id],
                               chat_number: params[:chat_id]).order(number: :asc).as_json(except: :id)
-    raise ActiveRecord::RecordNotFound if messages == []
+    raise ActiveRecord::RecordNotFound if @messages == []
 
     render json: @messages
   end
 
   # GET apps/[app_token]/chats/[chat_number]/messages/message_number
   def show
-    render json: @message
+    render json: @message.as_json(except: :id)
   end
 
   # POST apps/[app_token]/chats/[chat_number]/messages
@@ -37,10 +37,15 @@ class MessagesController < ApplicationController
     end
   end
 
+  def search
+    result = Message.search(params[:text]).records
+    render json: result
+  end
+
   private
 
   def set_message
-    @message = Message.find_by!(number: params[:id], app_token: params[:app_id])
+    @message = Message.find_by!(number: params[:id], app_token: params[:app_id], chat_number: params[:chat_id])
   end
 
   def message_params

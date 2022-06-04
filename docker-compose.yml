@@ -1,0 +1,74 @@
+version: '3'
+services:
+
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./tmp/db:/var/lib/mysql
+
+  # db:
+  #   image: mysql:5.6.34
+  #   restart: always
+  #   environment:
+  #     MYSQL_DATABASE: 'db'
+  #     # So you don't have to use root, but you can if you like
+  #     MYSQL_USER: 'user'
+  #     # You can use whatever password you like
+  #     MYSQL_PASSWORD: 'password'
+  #     # Password for root access
+  #     MYSQL_ROOT_PASSWORD: 'password'
+  #   ports:
+  #     # <Port exposed> : < MySQL Port running inside container>
+  #     - '3306:3306'
+  #   expose:
+  #     # Opens port 3306 on the container
+  #     - '3306'
+  #     # Where our data will be persisted
+  #   volumes:
+  #     - my-db:/var/lib/mysql
+# Names our volume
+  web:
+    build: .
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
+    volumes:
+      - .:/myapp
+    ports:
+      - "3000:3000"
+    environment:
+      DB_USERNAME: user
+      DB_PASSWORD: password
+      DB_HOST: localhost
+      DB_NAME: db
+    depends_on:
+      - db
+      - elasticsearch
+  appdata:
+    image: tianon/true
+    volumes:
+      - ".:/workspace"
+  
+
+  elasticsearch:
+    image: elasticsearch:8.2.0
+
+    ports:
+      - "9200:9200"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    mem_limit: 1g
+    cap_add:
+      - IPC_LOCK
+    volumes:
+      - /usr/share/elasticsearch/data
+volumes:
+  my-db:

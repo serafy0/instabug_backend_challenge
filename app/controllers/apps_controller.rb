@@ -3,14 +3,14 @@ class AppsController < ApplicationController
 
   # GET /apps
   def index
-    @apps = App.select(:token, :name).as_json(except: :id)
+    @apps = App.select(:token, :name, :chats_count).as_json(except: :id)
 
     render json: @apps
   end
 
   # GET /apps/[app_token]
   def show
-    render json: @app
+    render json: @app.as_json(except: :id)
   end
 
   # POST /apps
@@ -46,6 +46,6 @@ class AppsController < ApplicationController
   end
 
   def app_params
-    params.require(:app).permit(:name)
+    params.require(:app).permit(:name).with_defaults(chats_count: 0)
   end
 end

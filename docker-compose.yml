@@ -8,35 +8,39 @@ services:
       MYSQL_DATABASE: root
     ports:
       - "3306:3306"
-    volumes:
-      - ./tmp/db:/var/lib/mysql
 
-  elasticsearch:
-    image: opensearchproject/opensearch:2.0.0
-    environment:
-      - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
-      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
-      - "DISABLE_INSTALL_DEMO_CONFIG=true" # disables execution of install_demo_configuration.sh bundled with security plugin, which installs demo certificates and security configurations to OpenSearch
-      - "DISABLE_SECURITY_PLUGIN=true" # disables security plugin entirely in OpenSearch by setting plugins.security.disabled: true in opensearch.yml
-      - "discovery.type=single-node" # disables bootstrap checks that are enabled when network.host is set to a non-loopback address
+  # elasticsearch:
+  #   image: opensearchproject/opensearch:2.0.0
+  #   environment:
+  #     - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+  #     - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+  #     - "DISABLE_INSTALL_DEMO_CONFIG=true" # disables execution of install_demo_configuration.sh bundled with security plugin, which installs demo certificates and security configurations to OpenSearch
+  #     - "DISABLE_SECURITY_PLUGIN=true" # disables security plugin entirely in OpenSearch by setting plugins.security.disabled: true in opensearch.yml
+  #     - "discovery.type=single-node" # disables bootstrap checks that are enabled when network.host is set to a non-loopback address
        
-    ulimits:
-      memlock:
-        soft: -1
-        hard: -1
-      nofile:
-        soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
-        hard: 65536
-    volumes:
-      - opensearch-data1:/usr/share/opensearch/data
-    ports:
-      - 9200:9200
-      - 9600:9600 # required for Performance Analyzer
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+  #       hard: 65536
+  #   volumes:
+  #     - opensearch-data1:/usr/share/opensearch/data
+  #   ports:
+  #     - 9200:9200
+  #     - 9600:9600 # required for Performance Analyzer
+  # elasticsearch: 
+  #   image: elasticsearch:1.7.6
+  #   ports: ["9200"]
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-SsfL", "127.0.0.1:9200/_status"]
+  #     interval: 1s
+  #     timeout: 1s
+  #     retries: 300
   web:
     build: .
     command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
-    volumes:
-      - .:/myapp
     ports:
       - "3000:3000"
     environment:
@@ -53,23 +57,15 @@ services:
       - ".:/workspace"
   
 
-  # elasticsearch:
-  #   image: elasticsearch:8.2.0
+  elasticsearch:
+    image: elasticsearch:8.2.0
 
-  #   ports:
-  #     - "9200:9200"
-  #   ulimits:
-  #     memlock:
-  #       soft: -1
-  #       hard: -1
-  #     nofile:
-  #       soft: 65536
-  #       hard: 65536
-  #   mem_limit: 1g
-  #   cap_add:
-  #     - IPC_LOCK
-  #   volumes:
-  #     - /usr/share/elasticsearch/data
-volumes:
-  my-db:
-  opensearch-data1:
+    ports:
+      - 9200
+    expose:
+      - 9200 
+    environment:
+      - "discovery.type=single-node"
+      - "cluster.name=elasticsearch-rail"
+      - "xpack.security.enabled=false"
+      

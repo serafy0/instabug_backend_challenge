@@ -8,6 +8,11 @@ services:
       MYSQL_DATABASE: root
     ports:
       - "3306:3306"
+    expose:
+      - 3306
+    volumes:
+      - my-datavolume:/var/lib/mysql
+
 
   # elasticsearch:
   #   image: opensearchproject/opensearch:2.0.0
@@ -38,16 +43,66 @@ services:
   #     interval: 1s
   #     timeout: 1s
   #     retries: 300
+
+  # elasticsearch:
+  #   image: opensearchproject/opensearch:2.0.0
+
+  #   environment:
+  #     - bootstrap.memory_lock=true # along with the memlock settings below, disables swapping
+  #     - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m" # minimum and maximum Java heap size, recommend setting both to 50% of system RAM
+  #     - "DISABLE_INSTALL_DEMO_CONFIG=true" # disables execution of install_demo_configuration.sh bundled with security plugin, which installs demo certificates and security configurations to OpenSearch
+  #     - "DISABLE_SECURITY_PLUGIN=true" # disables security plugin entirely in OpenSearch by setting plugins.security.disabled: true in opensearch.yml
+  #     - "discovery.type=single-node" # disables bootstrap checks that are enabled when network.host is set to a non-loopback address
+       
+  #   ulimits:
+  #     memlock:
+  #       soft: -1
+  #       hard: -1
+  #     nofile:
+  #       soft: 65536 # maximum number of open files for the OpenSearch user, set to at least 65536 on modern systems
+  #       hard: 65536
+  #   volumes:
+  #     - opensearch-data1:/usr/share/opensearch/data
+  #   expose:
+  #     - 9200 
+  #   ports:
+  #     - 9200:9200
+  #     - 9600:9600 
+  # required for Performance Analyzer
+  # elasticsearch:
+  #     image: docker.elastic.co/elasticsearch/elasticsearch:5.5.3
+  #     environment:
+  #       - bootstrap.memory_lock=true
+  #       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+  #       - xpack.security.enabled=false
+  #       - xpack.monitoring.enabled=false
+  #       - xpack.graph.enabled=false
+  #       - xpack.watcher.enabled=false
+  #     ulimits:
+  #       memlock:
+  #         soft: -1
+  #         hard: -1
+  #     volumes:
+  #       - ./docker_data/elasticsearch/data:/usr/share/elasticsearch/data
+  #     ports:
+  #       - 9200:9200
+  elasticsearch:
+    image: elasticsearch:8.1.2
+    ports:
+        - 9200:9200
+
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+
   web:
     build: .
     command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails s -p 3000 -b '0.0.0.0'"
     ports:
       - "3000:3000"
-    environment:
-      DB_USERNAME: user
-      DB_PASSWORD: password
-      DB_HOST: localhost
-      DB_NAME: db
+    environment: 
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+  
     depends_on:
       - db
       - elasticsearch
@@ -57,15 +112,10 @@ services:
       - ".:/workspace"
   
 
-  elasticsearch:
-    image: elasticsearch:8.2.0
 
-    ports:
-      - 9200
-    expose:
-      - 9200 
-    environment:
-      - "discovery.type=single-node"
-      - "cluster.name=elasticsearch-rail"
-      - "xpack.security.enabled=false"
-      
+  
+volumes:
+  my-datavolume: 
+  opensearch-data1: 
+    
+

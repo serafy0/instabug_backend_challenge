@@ -38,7 +38,23 @@ class MessagesController < ApplicationController
   end
 
   def search
-    result = Message.search(params[:text]).records
+    result = Message.search(query: {
+                              bool: {
+                                filter: {
+                                  terms: {
+                                    app_token: params[:app_id],
+                                    chat_number: params[:chat_id].to_s
+                                  }
+                                },
+
+                                must: {
+                                  match: {
+                                    text: params[:text]
+                                  }
+                                }
+
+                              }
+                            }).records
     render json: result
   end
 
